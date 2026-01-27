@@ -1,5 +1,10 @@
+import express from "express";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 import { sendOtpEmail } from "../mail/mailService.js";
 import User from "../model/user.js"
+import { activateWalletService } from "./wallet.js";
+import Blacklist from "../model/blacklist.js";
 
 
 export const verifyOtpService = async (email: string, otpCode: string) => {
@@ -36,13 +41,19 @@ export const verifyOtpService = async (email: string, otpCode: string) => {
         user.otpCode = undefined;
         user.otpExpiresAt = undefined;
 
+        // reset otp resend count
+        user.otpResendCount = [];
 
-        // save user
+        // activate user wallet
+        const activateWallet = await activateWalletService(user.walletId.toString());
+        
+         
+
+         // save user
         await user.save();
 
         return user;
 }
-
 
 export const resendOtpService = async (email: string) => {
     const user = await User.findOne({ email })
@@ -102,8 +113,73 @@ export const resendOtpService = async (email: string) => {
     return user;
 }
 
+export const loginService = async (email: string, password: string) => {
+    const user = await User.findOne({ email });
+
+    // check if user exists
+    if (!user) {
+        throw new Error('User not found');
+    }
+
+
+    // check if user is verified
+    if (!user.isVerified) {
+        throw new Error('User is not verified');
+    }
+
+    // check if password matches
+     const comparedPassword = await bcrypt.compare(password, user.password);
+     if (!comparedPassword) {
+          throw new Error('Invalid password');
+     }
+
+     // wallet details can be populated here if needed
+     await user.populate('walletId');
+
+     // generate auth token (JWT) - This can be done in controller or here based on your architecture
+     const token = jwt.sign({
+            userId: user._id,
+            email: user.email
+     }, process.env.ACCESS_TOKEN!, { expiresIn: '1h' });
+
+     const refreshToken = jwt.sign({
+          userId: user._id,
+          email: user.email
+     }, process.env.REFRESH_TOKEN!, { expiresIn: '7d' });
+
+    return {user, token, refreshToken};
+    
+
+}
+
+export const logoutService = async (req: express.Request) => {
+    const token = req.headers.authorization?.split(' ')[1];
+
+    if (!token) {
+        throw new Error('No token provided');
+    }
+
+    const blacklist = new Blacklist({
+        token,
+        expiresAt: new Date(Date.now() + 3600 * 1000) // Expires in 1 hour
+    });
+
+    await blacklist.save();
+
+    return;
+}
+
+export const getAllUsersService = async () => {
+    const users = await User.find().select('-password').populate('walletId');
+     
+     if (!users) {
+          throw new Error('No users found');
+     }
+
+    return users;
+}
 
 const userService = {
-     verifyOtpService, resendOtpService
+     verifyOtpService, resendOtpService, loginService, logoutService, getAllUsersService
 }
 export default userService

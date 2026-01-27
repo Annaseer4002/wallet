@@ -8,6 +8,8 @@ import {
     Length
 } from "class-validator";
 
+export namespace UserDto {
+
 export class SignupDto { // Convention: Use PascalCase for Classes
     @IsString()
     @IsNotEmpty({ message: 'Username is required' })
@@ -42,9 +44,20 @@ export class ValidateOtpDto {
     otpCode!: string;
 }
 
+export class loginDto {
+    @IsEmail({}, { message: 'Please enter a valid email address' })
+    @IsNotEmpty({ message: 'Email is required' })
+    email!: string;
 
-
-export default {
-    SignupDto,
-    ValidateOtpDto
+    @IsString()
+    @IsNotEmpty({ message: 'Password is required' })
+    password!: string;
 }
+}
+
+export default UserDto;
+
+
+
+
+

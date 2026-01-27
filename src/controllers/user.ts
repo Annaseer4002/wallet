@@ -128,16 +128,61 @@ export const verifyOtp = async (req: Request, res: Response) => {
      });
 }}
 
-
-
 export const resendOtp = async (req: Request, res: Response) => {
      const { email } = req.body;
 
      try {
           const resendOtp = await userService.resendOtpService(email);
-          return res.status(200).json({
+
+           // clear otpCode, otpExpiresAt, and otpResendCount to the database after successful resend
+          resendOtp.otpCode = undefined;
+          resendOtp.otpExpiresAt = undefined;
+          resendOtp.otpResendCount = [];
+
+         return res.status(200).json({
                status: 'success',
                message: 'OTP resent successfully. Please check your email.',
+          });
+
+
+     }catch (error) {
+          return res.status(500).json({
+               status: 'error',
+               message:  error instanceof Error ? error.message : 'Internal Server Error',
+          });
+     }
+}
+
+export const login = async (req: Request, res: Response) => {
+     const { email, password } : UserDto.loginDto = req.body;
+
+     try {
+
+          const { user, token, refreshToken } = await userService.loginService(email, password);
+          // console.log(user);
+
+          return res.status(200).json({
+               status: 'success',
+               message: 'Login successful.',
+               user: {
+                    userId: user._id,
+                    walletId: user.walletId,
+                    email: user.email,
+                    username: user.username,
+                    phoneNumber: user.phoneNumber,
+                    isVerified: user.isVerified
+               },
+               token,
+               refreshToken
+               // data: {
+               //      userId: user._id,
+               //      walletId: user.walletId,
+               //      email: user.email,
+               //      username: user.username,
+               //      phoneNumber: user.phoneNumber,
+               //      isVerified: user.isVerified
+               // }
+               
           });
 
      }catch (error) {
@@ -148,6 +193,39 @@ export const resendOtp = async (req: Request, res: Response) => {
      }
 }
 
+export const logout = async (req: Request, res: Response) => {
+     const blacklist = await userService.logoutService(req);
+
+     try {
+          return res.status(200).json({
+               status: 'success',
+               message: 'Logout successful.'
+          });
+}catch (error) {
+     return res.status(500).json({
+          status: 'error',
+          message:  error instanceof Error ? error.message : 'Internal Server Error',
+     });
+} }
+
+export const users = async (req: Request, res: Response) => {
+     try {
+
+          const allUsers = await userService.getAllUsersService();
+
+          return res.status(200).json({
+               status: 'success',
+               message: 'Users retrieved successfully.',
+               data: allUsers
+          });
+
+     }catch (error) {
+          return res.status(500).json({
+               status: 'error',
+               message:  error instanceof Error ? error.message : 'Internal Server Error',
+          });
+     }
+}
 
 export const deleteUser = async (req: Request, res: Response) => {
      const { userId } = req.params;
@@ -176,5 +254,5 @@ export const deleteUser = async (req: Request, res: Response) => {
 
 
 
-const UserController = { signup, verifyOtp, resendOtp, deleteUser };
+const UserController = { signup, verifyOtp, resendOtp, login, logout, users, deleteUser };
 export default UserController;
