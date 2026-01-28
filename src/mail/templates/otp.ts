@@ -13,3 +13,26 @@ export const otpTemplate = (name: string, otp: string) => {
     </div>
     `;
 };
+
+
+export const forgetPasswordTemplate = (name: string) => {
+      return `
+         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px;">
+        <h2 style="color: #4A90E2;">Reset Your Password</h2>
+        <p>Hello <b>${name}</b>,</p>
+        <p> From <b>WalletApp</b>. Click the link below to reset your password:</p>
+        <button style="background-color: #11447e; color: #ffff; border: none; border-radius: 5px">Reset Password</button>
+        <hr style="border: none; border-top: 1px solid #eee;" />
+        <p style="font-size: 12px; color: #888;">If you did not request this, please ignore this email.</p>
+    </div>`
+}
+
+
+
+
+const emailTemplate = {
+    otpTemplate, forgetPasswordTemplate
+}
+
+
+export default emailTemplate

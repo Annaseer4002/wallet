@@ -2,7 +2,7 @@ import type, { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import User from '../model/user.js';
-import { sendOtpEmail } from '../mail/mailService.js';
+import sendingMail, { sendOtpEmail } from '../mail/mailService.js';
 import Wallet from '../model/wallet.js';
 import userService from '../services/user.js';
 import UserDto from '../dtos/user.js';
@@ -65,7 +65,7 @@ export const signup = async (req: Request, res: Response) => {
 
 
           // send otp to user's email or phone number
-          await sendOtpEmail(email, username, otp.toString());
+          await sendingMail.sendOtpEmail(email, username, otp.toString());
 
           // respond with success message
           return res.status(201).json({
@@ -208,6 +208,26 @@ export const logout = async (req: Request, res: Response) => {
      });
 } }
 
+export const forgetPassword = async (req: Request, res: Response)=>{
+     const {email} = req.body
+
+     try {
+
+          const forgetPassword = await userService.forgetPasswordService(email)
+
+        return res.status(200).json({
+               status:'success',
+               message:'We`ve sent you a mail, Please check your email to reset your password',
+          })
+          
+     } catch (error) {
+            return res.status(500).json({
+          status: 'error',
+          message:  error instanceof Error ? error.message : 'Internal Server Error',
+     });
+     }
+}
+
 export const users = async (req: Request, res: Response) => {
      try {
 
@@ -254,5 +274,5 @@ export const deleteUser = async (req: Request, res: Response) => {
 
 
 
-const UserController = { signup, verifyOtp, resendOtp, login, logout, users, deleteUser };
+const UserController = { signup, verifyOtp, resendOtp, login, logout, forgetPassword, users, deleteUser };
 export default UserController;

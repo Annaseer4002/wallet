@@ -1,10 +1,11 @@
 import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { sendOtpEmail } from "../mail/mailService.js";
+import sendingMail, { sendOtpEmail } from "../mail/mailService.js";
 import User from "../model/user.js"
 import { activateWalletService } from "./wallet.js";
 import Blacklist from "../model/blacklist.js";
+
 
 
 export const verifyOtpService = async (email: string, otpCode: string) => {
@@ -105,7 +106,7 @@ export const resendOtpService = async (email: string) => {
     user.otpResendCount.push(new Date());
 
         // send otp to user's email or phone number
-        await sendOtpEmail(email, user.username, newOtp);
+        await sendingMail.sendOtpEmail(email, user.username, newOtp);
 
     // save user
     await user.save();
@@ -169,6 +170,20 @@ export const logoutService = async (req: express.Request) => {
     return;
 }
 
+export const forgetPasswordService = async (email: string) => {
+    const user = await User.findOne({email})
+    if(!user){
+        throw new Error("User not found")
+    }
+
+    await sendingMail.sendForgetPasswordEmail(user.username,email)
+
+    return
+    
+
+
+}
+
 export const getAllUsersService = async () => {
     const users = await User.find().select('-password').populate('walletId');
      
@@ -180,6 +195,6 @@ export const getAllUsersService = async () => {
 }
 
 const userService = {
-     verifyOtpService, resendOtpService, loginService, logoutService, getAllUsersService
+     verifyOtpService, resendOtpService, loginService, logoutService, forgetPasswordService, getAllUsersService
 }
 export default userService
