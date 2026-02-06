@@ -124,7 +124,7 @@ export const loginService = async (email: string, password: string) => {
 
 
     // check if user is verified
-    if (!user.isVerified) {
+    if (user.isVerified == false) {
         throw new Error('User is not verified');
     }
 
@@ -171,18 +171,55 @@ export const logoutService = async (req: express.Request) => {
 }
 
 export const forgetPasswordService = async (email: string) => {
+
+    // find user
     const user = await User.findOne({email})
     if(!user){
         throw new Error("User not found")
     }
 
+    const resetToken = jwt.sign(
+        {id: user.id},
+        process.env.RESET_PASSWORD!,
+        {expiresIn: '1h'})
+
+    const resetLink = `https://abdulnasir.onrender.com/${resetToken}`
+
     await sendingMail.sendForgetPasswordEmail(user.username,email)
 
     return
     
-
-
 }
+
+export const resetPasswordService = async (email: string, password: string) => {
+     
+        // find user form the database
+        const user = await User.findOne({email})
+
+        // check if user exist
+        if(!user){
+            throw new Error('User not found')
+        }
+        
+        // check if the user is verified
+        if(user.isVerified == false){
+           throw new Error('User account is not verified')
+        }
+
+        // hash the password using bcrypt
+        const hashedPassword = await bcrypt.hash(password, 10)
+
+        // update the password to the new hashed password
+        user.password = hashedPassword
+
+        await user.save()
+
+        return user
+
+        
+}
+
+
 
 export const getAllUsersService = async () => {
     const users = await User.find().select('-password').populate('walletId');
@@ -191,10 +228,37 @@ export const getAllUsersService = async () => {
           throw new Error('No users found');
      }
 
-    return users;
+    return users; // 
 }
 
+
+export const verifyUser = async (userId: string) => {
+    
+
+    const user = await User.findById(userId)
+
+    // check if user exist
+    if(!user){
+        throw new Error('user not found')
+    }
+     
+    // mark user verified as true
+    user.isVerified = true
+
+    await user.save()
+
+    return user
+}
+
+
 const userService = {
-     verifyOtpService, resendOtpService, loginService, logoutService, forgetPasswordService, getAllUsersService
+     verifyOtpService, 
+     resendOtpService, 
+     loginService, 
+     logoutService, 
+     forgetPasswordService, 
+     resetPasswordService, 
+     getAllUsersService,
+     verifyUser
 }
 export default userService

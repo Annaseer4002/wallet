@@ -5,7 +5,7 @@ import {
     MinLength, 
     MaxLength, 
     IsPhoneNumber, 
-    Length
+    Length,
 } from "class-validator";
 
 export namespace UserDto {
@@ -53,7 +53,26 @@ export class loginDto {
     @IsNotEmpty({ message: 'Password is required' })
     password!: string;
 }
+export class forgetPasswordDto {
+    @IsEmail({}, {message:'Please enter a valid email'})
+    @IsNotEmpty({message: 'Email is required'})
+    email!: string
 }
+
+export class resetPasswordDto {
+    @IsEmail({}, {message:'Please enter a valid email'})
+    @IsNotEmpty({message:'email is required'})
+    email!: string
+
+    @IsString()
+    @IsNotEmpty({message:'Password is required'})
+    password!: string
+}
+
+}
+
+
+
 
 export default UserDto;
 

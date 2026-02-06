@@ -14,7 +14,9 @@ router.post('/resendOtp', UserController.resendOtp)
 router.post('/login', validateBody(UserDto.loginDto), UserController.login)
 router.post('/logout', authorizationMiddleware.Authorization, UserController.logout )
 router.post('/forgetPassword', UserController.forgetPassword)
+router.post('/resetPassword', validateBody(UserDto.resetPasswordDto), UserController.resetPassword)
 router.delete('/deleteUser/:userId', authorizationMiddleware.Authorization, UserController.deleteUser);
 router.get('/users', UserController.users)
+router.post('/verifyUser/:userId', authorizationMiddleware.Authorization, UserController.verifyUser)
 
 export default router;

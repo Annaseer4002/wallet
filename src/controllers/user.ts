@@ -209,7 +209,7 @@ export const logout = async (req: Request, res: Response) => {
 } }
 
 export const forgetPassword = async (req: Request, res: Response)=>{
-     const {email} = req.body
+     const {email} : UserDto.forgetPasswordDto = req.body
 
      try {
 
@@ -225,6 +225,28 @@ export const forgetPassword = async (req: Request, res: Response)=>{
           status: 'error',
           message:  error instanceof Error ? error.message : 'Internal Server Error',
      });
+     }
+}
+
+export const resetPassword = async (req: Request, res: Response) => {
+     const { email, password}: UserDto.resetPasswordDto = req.body
+
+     try {
+
+          const resetPassword = await userService.resetPasswordService(email, password)
+
+          await sendingMail.sendResetPasswordEmail(resetPassword.username, email)
+
+          res.status(200).json({
+               status: 'success',
+               message:'Password reset successfully, please login'
+          })
+          
+     } catch (error) {
+          return res.status(500).json({
+               status: 'error',
+               message: error instanceof Error ? error.message : 'internal server error',
+          })
      }
 }
 
@@ -272,7 +294,43 @@ export const deleteUser = async (req: Request, res: Response) => {
 }}
 
 
+export const verifyUser = async (req: Request, res: Response) => {
+     const {userId} = req.params
+
+     try {
+
+          const verifyUser = await userService.verifyUser(userId.toString())
+
+          if(!verifyUser){
+          return res.status(404).json({
+                    status:'failed',
+                    message: 'failed to verify user'
+               })
+          }
+
+          res.status(200).json({
+               status:'success',
+               message:'user account verified successful'
+          })
+          
+     } catch (error) {
+        return  res.status(500).json({
+               status: 'error',
+               message: error instanceof Error ? error.message: 'Internal serve error'
+          })
+     }
+}
 
 
-const UserController = { signup, verifyOtp, resendOtp, login, logout, forgetPassword, users, deleteUser };
+
+const UserController = { signup,
+      verifyOtp,
+     resendOtp,
+     login,
+     logout,
+     forgetPassword,
+     resetPassword,
+     users, 
+     deleteUser,
+verifyUser };
 export default UserController;
