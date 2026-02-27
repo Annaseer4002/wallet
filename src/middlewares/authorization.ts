@@ -1,8 +1,9 @@
 import {Request, Response, NextFunction } from "express";
 import Blacklist from "../model/blacklist.js";
 import jwt from "jsonwebtoken";
+import { TokenPayload } from "../types/express.js";
 
-export const Authorization = async (req: Request, res: Response, next: NextFunction) =>{
+export const Authorization = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const token = req.headers.authorization
 
@@ -15,7 +16,7 @@ export const Authorization = async (req: Request, res: Response, next: NextFunct
 
         const realToken = token.split(' ')[1];
 
-           const isBlacklisted = await Blacklist.findOne({ token: realToken });
+        const isBlacklisted = await Blacklist.findOne({ token: realToken });
 
         if (isBlacklisted) {
             return res.status(401).json({
@@ -24,27 +25,18 @@ export const Authorization = async (req: Request, res: Response, next: NextFunct
             });
         }
 
-        const decoded = jwt.verify(realToken, process.env.ACCESS_TOKEN!)
-        if (!decoded) {
-            return res.status(401).json({
-                status: 'error',
-                message: 'Unauthorized: Invalid token'
-            });
-        }
+        const decoded = jwt.verify(realToken, process.env.ACCESS_TOKEN!) as TokenPayload
 
-        (req as any).user = decoded;
-        
-        
-
-
+        req.user = decoded;
         next();
 
-} catch (error) {
+    } catch (error) {
         return res.status(401).json({
             status: 'error',
-            message: 'Unauthorized: No token provided'
+            message: error instanceof jwt.JsonWebTokenError ? error.message : 'Unauthorized: Invalid token'
         })
-    }}
+    }
+}
 
 
 const authorizationMiddleware = {
