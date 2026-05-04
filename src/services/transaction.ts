@@ -151,7 +151,9 @@ export const getMyTransactions = async (userId: string) => {
 
         const transactions = await Transaction.find({ 
             $or: [{ senderId: userId }, { receiverId: userId }] 
-        })
+        }).populate('senderId', 'name email')
+          .populate('receiverId', 'name email')
+          .sort({ createdAt: -1 }) // sort by most recent
 
         // if no transactions found, throw error
         if(!transactions || transactions.length === 0){
@@ -169,7 +171,8 @@ export const getTransactionByRefrence = async (reference: string) => {
     try {
 
         // find transaction by reference
-        const transaction = await Transaction.findOne({reference})
+        const transaction = await Transaction.findOne({reference}).populate('senderId', 'name email')
+                                                    .populate('receiverId', 'name email')
 
         // if transaction not found, throw error
         if(!transaction){
